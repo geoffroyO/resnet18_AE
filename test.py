@@ -17,7 +17,8 @@ class Args:
     lr=1e-4
     batch_size=1024
     nb_channels=3
-    main_path='/Users/geoffroy/Documents/dataG/PPMI_longi/'
+    main_path='./'
+    save_path='./'
     patch_size=64
     fold=0
     

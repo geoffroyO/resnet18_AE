@@ -2,7 +2,8 @@
 import torch
 from torch import optim
 import numpy as np
-
+from torch.utils.data import Dataset
+from torch.utils.data import DataLoader
 # from barbar import Bar
 from tqdm import tqdm
 
@@ -22,7 +23,17 @@ class Args:
     
 args = Args()
 
-train_loader = np.random.normal(0, 1, size=(73771008, 3, 64, 64))
+class Data(Dataset):
+    def __init__(self, N):
+        self.data = np.random.normal(0, 1, size=(N, 3, 64, 64)).astype(np.float32)
+            
+    def __len__(self):
+        return len(self.data)
+
+    def __getitem__(self, index):
+        return self.data[index]
+
+train_loader = DataLoader(Data(1000000))
 
 model = AE().to(device)
 optimizer = optim.Adam(model.parameters(), lr=args.lr)

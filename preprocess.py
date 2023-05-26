@@ -15,6 +15,7 @@ def load_folds(fold, main_path, mode):
         selection = folds_controls[folds_controls["fold_{}".format(fold)] == 1]
         controls_names = selection['Subject'].to_numpy(dtype=str)
         controls_ages = selection['Age'].to_numpy(dtype=str)
+        controls_it = [(name, age) for name, age in zip(controls_names, controls_ages)]
 
         return controls_it
 
@@ -23,7 +24,7 @@ def load_folds(fold, main_path, mode):
         controls_names_test = selection['Subject'].to_numpy(dtype=str)
         controls_ages_test = selection['Age'].to_numpy(dtype=str)
 
-        controls_it = [(name, age) for name, age in zip(controls_names, controls_ages)]
+        
         controls_test_it = [(name, age) for name, age in zip(controls_names_test, controls_ages_test)]
 
         patients = pd.read_excel(main_path + 'patients.xlsx')
@@ -70,7 +71,7 @@ class Data(Dataset):
 
 def get_data(args, mode="Train"):
     if mode == "Train":
-        controls_it, _, _ = load_folds(args.fold, args.main_path, mode)
+        controls_it = load_folds(args.fold, args.main_path, mode)
         main_path = args.main_path + "controls/"
         train = Data(controls_it, args, main_path)
         dataloader_train = DataLoader(train, batch_size=args.batch_size, shuffle=True, num_workers=0)

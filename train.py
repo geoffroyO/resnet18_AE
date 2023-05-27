@@ -42,15 +42,17 @@ class TrainerAE:
                             x = next(train_loader)
                         with record_function("to device batch"):
                             x = x.float().to(self.device)
-                        with record_function("training_function"):
+                        with record_function("forward pass"):
                             optimizer.zero_grad()
-                            
                             x_hat= self.model(x)
-
                             loss = self.compute.forward(x, x_hat)
+                        with record_function("backward pass"):
                             loss.backward(retain_graph=True)
+                        with record_function("clipping"):
                             torch.nn.utils.clip_grad_norm_(self.model.parameters(), 5)
+                        with record_function("optim step"):
                             optimizer.step()
+                        with record_function("taking loss"):
                             total_loss += loss.item()
                     if total_loss < min_loss:
                             min_loss = total_loss

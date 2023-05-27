@@ -10,7 +10,7 @@ from tqdm import tqdm
 
 def load_folds(fold, main_path, mode):
     if mode == "Train":
-        folds_controls = pd.read_excel(main_path + 'controls_nogroup.xlsx')
+        folds_controls = pd.read_excel(main_path + 'controls.xlsx')
 
         selection = folds_controls[folds_controls["fold_{}".format(fold)] == 1]
         controls_names = selection['Subject'].to_numpy(dtype=str)
@@ -74,5 +74,5 @@ def get_data(args, mode="Train"):
         controls_it = load_folds(args.fold, args.main_path, mode)
         main_path = args.main_path + "controls/"
         train = Data(controls_it, args, main_path)
-        dataloader_train = DataLoader(train, batch_size=args.batch_size, shuffle=True, num_workers=0)
+        dataloader_train = DataLoader(train, batch_size=args.batch_size, shuffle=True, num_workers=2)
         return dataloader_train

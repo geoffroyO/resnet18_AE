@@ -61,8 +61,8 @@ class TrainerAE:
                         epoch, total_loss/len(self.train_loader)))
                     hist_loss.append(total_loss/len(self.train_loader))
                     ctx.record(tag=f'{epoch+1}')
-                    prof.export_chrome_trace(args.save_path + "trace.json")
-                    break
+                prof.export_chrome_trace(self.args.save_path + "trace.json")
+                break
         self.csv_handler.save_data()
         hist_loss = np.array(hist_loss)
         np.save(self.args.save_path + 'hist_loss.npy', hist_loss)

@@ -42,15 +42,17 @@ class TrainerAE:
                     optimizer.step()
 
                     total_loss += loss.item()
+                    break
                 if total_loss < min_loss:
-                        min_loss = total_loss.data
+                        min_loss = total_loss
                         torch.save(self.model.state_dict(), self.args.save_path + 'best-model-parameters.pt')
                         torch.save(optimizer.state_dict(), self.args.save_path + 'best-optim-parameters.pt')
-
+                
                 print('Training AE... Epoch: {}, Loss: {:.3f}'.format(
                     epoch, total_loss/len(self.train_loader)))
                 hist_loss.append(total_loss/len(self.train_loader))
                 ctx.record(tag=f'{epoch+1}')
+                break
         self.csv_handler.save_data()
         hist_loss = np.array(hist_loss)
         np.save(self.args.save_path + 'hist_loss.npy', hist_loss)

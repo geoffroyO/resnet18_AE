@@ -29,10 +29,10 @@ class TrainerAE:
         min_loss = torch.inf
         hist_loss = []
 
-        with EnergyContext(handler=self.csv_handler, start_tag='0') as ctx:
+        with EnergyContext(handler=self.csv_handler, start_tag='e:1 b:0') as ctx:
             for epoch in range(self.args.num_epochs):
                 total_loss = 0
-
+                nbatch = 1
                 for x in Bar(self.train_loader):
                     x = x.float().to(self.device)
                     optimizer.zero_grad()
@@ -42,6 +42,8 @@ class TrainerAE:
                     torch.nn.utils.clip_grad_norm_(self.model.parameters(), 5)
                     optimizer.step()
                     total_loss += loss.item()
+                    ctx.record(tag=f'e:{epoch+1} b:{nbatch}')
+                    nbatch += 1
 
                 if total_loss < min_loss:
                     min_loss = total_loss
@@ -51,7 +53,7 @@ class TrainerAE:
                 print('Training AE... Epoch: {}, Loss: {:.3f}'.format(
                     epoch, total_loss/len(self.train_loader)))
                 hist_loss.append(total_loss/len(self.train_loader))
-                ctx.record(tag=f'{epoch+1}')
+                
     
         self.csv_handler.save_data()
         hist_loss = np.array(hist_loss)

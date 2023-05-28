@@ -12,15 +12,16 @@ from pyJoules.handler.csv_handler import CSVHandler
 from pyJoules.energy_meter import EnergyContext
 
 class TrainerAE:
-    def __init__(self, args, data, device):
+    def __init__(self, args, data, device, model_type):
         self.train_loader = data
         self.device = device
         self.args = args
         self.csv_handler = CSVHandler(self.args.save_path + 'result.csv')
+        self.model_type = model_type
 
 
     def train(self):
-        self.model = AE().to(self.device)
+        self.model = AE(self.model_type).to(self.device)
         optimizer = optim.Adam(self.model.parameters(), lr=self.args.lr)
 
         self.compute = ComputeLoss(self.model, self.device)

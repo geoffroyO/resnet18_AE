@@ -101,6 +101,44 @@ class ResNet18Enc(nn.Module):
         x = F.adaptive_avg_pool2d(x, 1)
         return x
     
+
+class NicoEnc(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.conv1 = nn.Conv2d(3, 3, 5, stride=1, padding=0)
+        self.bn3 = nn.BatchNorm2d(3)
+        self.conv2 = nn.Conv2d(3, 4, 3, stride=1, padding=0) 
+        self.bn4 = nn.BatchNorm2d(4)
+        self.conv3 = nn.Conv2d(4, 12, 3, stride=3, padding=0) 
+        self.bn12 = nn.BatchNorm2d(12)
+        self.conv4 = nn.Conv2d(12, 16, 3, stride=1, padding=0) 
+        self.bn16 = nn.BatchNorm2d(16)
+    
+    def forward(self, x):
+        x = F.gelu(self.bn3(self.conv1(x)))
+        x = F.gelu(self.bn4(self.conv2(x)))
+        x = F.gelu(self.bn12(self.conv3(x)))
+        x = F.gelu(self.bn16(self.conv4(x)))
+        return x
+    
+class NicoDec(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.conv1T = nn.ConvTranspose2d(16, 12, 3, stride=1, padding=0)
+        self.bn1T = nn.BatchNorm2d(12)
+        self.conv2T = nn.ConvTranspose2d(12, 4, 3, stride=3, padding=0)
+        self.bn2T = nn.BatchNorm2d(4)
+        self.conv3T = nn.ConvTranspose2d(4, 3, 3, stride=1, padding=0)
+        self.bn3T = nn.BatchNorm2d(3)
+        self.conv4T = nn.ConvTranspose2d(3, 3, 5, stride=1, padding=0)
+    
+    def forward(self, x):
+        x = F.gelu(self.bn1T(self.conv1T(x)))
+        x = F.gelu(self.bn2T(self.conv2T(x)))
+        x = F.gelu(self.bn3T(self.conv3T(x)))
+        x = F.gelu(self.conv4T(x))
+        return x
+    
 class ResNet18Dec(nn.Module):
 
     def __init__(self, num_Blocks=[2,2,2,2], nc=3):
@@ -133,10 +171,16 @@ class ResNet18Dec(nn.Module):
 
 class AE(nn.Module):
 
-    def __init__(self):
+    def __init__(self, model='resnet18'):
         super().__init__()
-        self.encoder = ResNet18Enc()
-        self.decoder = ResNet18Dec()
+        if model == 'resnet18':
+            self.encoder = ResNet18Enc()
+            self.decoder = ResNet18Dec()
+        if model == 'nicoAE':
+            self.encoder = NicoEnc()
+            self.decoder = NicoDec()
+        else:
+            print('Non implemented')
 
     def forward(self, x):
         x = self.encoder(x)

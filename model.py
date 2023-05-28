@@ -176,7 +176,7 @@ class AE(nn.Module):
         if model == 'resnet18':
             self.encoder = ResNet18Enc()
             self.decoder = ResNet18Dec()
-        if model == 'nicoAE':
+        elif model == 'nicoAE':
             self.encoder = NicoEnc()
             self.decoder = NicoDec()
         else:

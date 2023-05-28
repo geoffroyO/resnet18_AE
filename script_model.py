@@ -11,13 +11,14 @@ if __name__ == "__main__":
     parser.add_argument("-p", "--main_path", help="path of the data", type=str)
     parser.add_argument("-sp", "--save_path", help="path to save result", type=str)
     parser.add_argument("-m", "--model", help="model of AE", default='resnet18', type=str)
+    parser.add_argument("-e", "--epochs", help="epoches", default=5, type=int)
     args_in = parser.parse_args()
 
 
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
     class Args:
-        num_epochs=10
+        num_epochs=args_in.epochs
         lr=1e-4
         batch_size=args_in.batch_size
         nb_channels=3

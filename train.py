@@ -24,7 +24,7 @@ class TrainerAE:
         self.model = AE(self.model_type).to(self.device)
         optimizer = optim.Adam(self.model.parameters(), lr=self.args.lr)
 
-        self.compute = ComputeLoss(self.model, self.device)
+        self.compute = ComputeLoss()
         self.model.train()
         min_loss = torch.inf
         hist_loss = []
@@ -42,6 +42,7 @@ class TrainerAE:
                     torch.nn.utils.clip_grad_norm_(self.model.parameters(), 5)
                     optimizer.step()
                     total_loss += loss.item()
+                    print(loss.item())
                     ctx.record(tag=f'e:{epoch+1} b:{nbatch}')
                     nbatch += 1
 

@@ -32,5 +32,5 @@ if __name__ == "__main__":
             os.makedirs(args.save_path)
 
     data_loader = get_data(args)
-    trainer = TrainerAE(args, data_loader, device, args_in.model)
+    trainer = TrainerAE(args, data_loader, device, args_in.m)
     trainer.train()

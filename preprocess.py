@@ -63,7 +63,7 @@ class Data(Dataset):
     def __getitem__(self, index):
         sub_name, sub_age, x, y, z = self.idx[index]
         if self.patch_size % 2 == 0:
-            tmp = self.patch_size / 2
+            tmp = self.patch_size // 2
             patch = self.data[(sub_name, sub_age)][:, (x-tmp):(x+tmp), (y-tmp):(y+tmp), z] 
         else:
             tmp = self.patch_size // 2

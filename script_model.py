@@ -11,7 +11,7 @@ if __name__ == "__main__":
     parser.add_argument("-p", "--main_path", help="path of the data", type=str)
     parser.add_argument("-sp", "--save_path", help="path to save result", type=str)
     parser.add_argument("-m", "--model", help="model of AE", default='resnet18', type=str)
-    parser.add_argument("-e", "--epochs", help="epoches", default=5, type=int)
+    parser.add_argument("-e", "--epochs", help="epochs", default=5, type=int)
     args_in = parser.parse_args()
 
 
@@ -25,7 +25,7 @@ if __name__ == "__main__":
         main_path=args_in.main_path
         save_path=args_in.save_path
         patch_size=args_in.patch_size
-        fold=0
+        fold=3
         
     args = Args()
     if not os.path.exists(args.save_path):

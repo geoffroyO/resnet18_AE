@@ -101,6 +101,35 @@ class ResNet18Enc(nn.Module):
         x = F.adaptive_avg_pool2d(x, 1)
         return x
     
+class ResNet18Dec(nn.Module):
+
+    def __init__(self, num_Blocks=[2,2,2,2], nc=3):
+        super().__init__()
+        self.in_planes = 512
+
+        self.layer4 = self._make_layer(BasicBlockDec, 256, num_Blocks[3], stride=2)
+        self.layer3 = self._make_layer(BasicBlockDec, 128, num_Blocks[2], stride=2)
+        self.layer2 = self._make_layer(BasicBlockDec, 64, num_Blocks[1], stride=2)
+        self.layer1 = self._make_layer(BasicBlockDec, 64, num_Blocks[0], stride=1)
+        self.conv1 = ResizeConv2d(64, nc, kernel_size=3, scale_factor=2)
+
+    def _make_layer(self, BasicBlockDec, planes, num_Blocks, stride):
+        strides = [stride] + [1]*(num_Blocks-1)
+        layers = []
+        for stride in reversed(strides):
+            layers += [BasicBlockDec(self.in_planes, stride)]
+        self.in_planes = planes
+        return nn.Sequential(*layers)
+
+    def forward(self, x):
+        x = F.interpolate(x, scale_factor=4)
+        x = self.layer4(x)
+        x = self.layer3(x)
+        x = self.layer2(x)
+        x = self.layer1(x)
+        x = torch.sigmoid(self.conv1(x))
+        x = x.view(x.size(0), 3, 64, 64)
+        return x
 
 class NicoEnc(nn.Module):
     def __init__(self):
@@ -137,36 +166,6 @@ class NicoDec(nn.Module):
         x = F.gelu(self.bn2T(self.conv2T(x)))
         x = F.gelu(self.bn3T(self.conv3T(x)))
         x = F.gelu(self.conv4T(x))
-        return x
-    
-class ResNet18Dec(nn.Module):
-
-    def __init__(self, num_Blocks=[2,2,2,2], nc=3):
-        super().__init__()
-        self.in_planes = 512
-
-        self.layer4 = self._make_layer(BasicBlockDec, 256, num_Blocks[3], stride=2)
-        self.layer3 = self._make_layer(BasicBlockDec, 128, num_Blocks[2], stride=2)
-        self.layer2 = self._make_layer(BasicBlockDec, 64, num_Blocks[1], stride=2)
-        self.layer1 = self._make_layer(BasicBlockDec, 64, num_Blocks[0], stride=1)
-        self.conv1 = ResizeConv2d(64, nc, kernel_size=3, scale_factor=2)
-
-    def _make_layer(self, BasicBlockDec, planes, num_Blocks, stride):
-        strides = [stride] + [1]*(num_Blocks-1)
-        layers = []
-        for stride in reversed(strides):
-            layers += [BasicBlockDec(self.in_planes, stride)]
-        self.in_planes = planes
-        return nn.Sequential(*layers)
-
-    def forward(self, x):
-        x = F.interpolate(x, scale_factor=4)
-        x = self.layer4(x)
-        x = self.layer3(x)
-        x = self.layer2(x)
-        x = self.layer1(x)
-        x = torch.sigmoid(self.conv1(x))
-        x = x.view(x.size(0), 3, 64, 64)
         return x
 
 class AE(nn.Module):

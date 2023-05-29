@@ -62,7 +62,13 @@ class Data(Dataset):
 
     def __getitem__(self, index):
         sub_name, sub_age, x, y, z = self.idx[index]
-        patch = self.data[(sub_name, sub_age)][:, x:x+self.patch_size, y:y+self.patch_size, z] 
+        if self.patch_size % 2 == 0:
+            tmp = self.patch_size / 2
+            patch = self.data[(sub_name, sub_age)][:, (x-tmp):(x+tmp), (y-tmp):(y+tmp), z] 
+        else:
+            tmp = self.patch_size // 2
+            patch = self.data[(sub_name, sub_age)][:, (x-tmp):(x+tmp+1), (y-tmp):(y+tmp+1), z] 
+
         _, H, W = patch.shape
         if H + W != self.patch_size * 2:
             pad_widths = [(0, 0), (0, self.patch_size - H), (0, self.patch_size - W)]

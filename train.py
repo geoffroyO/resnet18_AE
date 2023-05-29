@@ -42,7 +42,6 @@ class TrainerAE:
                     torch.nn.utils.clip_grad_norm_(self.model.parameters(), 5)
                     optimizer.step()
                     total_loss += loss.item()
-                    print(loss.item())
                     ctx.record(tag=f'e:{epoch+1} b:{nbatch}')
                     nbatch += 1
 

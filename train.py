@@ -42,20 +42,15 @@ class TrainerAE:
                     torch.nn.utils.clip_grad_norm_(self.model.parameters(), 5)
                     optimizer.step()
                     total_loss += loss.item()
-                    if nbatch % 1000 == 0:
+                    if nbatch % 10000 == 0:
                         ctx.record(tag=f'e:{epoch} b:{nbatch}')
                     nbatch += 1
-                    
-
                 if total_loss < min_loss:
                     min_loss = total_loss
                     torch.save(self.model.state_dict(), self.args.save_path + 'best-model-parameters.pt')
                     torch.save(optimizer.state_dict(), self.args.save_path + 'best-optim-parameters.pt')
-                
-                print('Training AE... Epoch: {}, Loss: {:.3f}'.format(
-                    epoch, total_loss/len(self.train_loader)))
-                hist_loss.append(total_loss/len(self.train_loader))
-    
+                print('Training AE... Epoch: {}, Loss: {:.3f}'.format(epoch, total_loss))
+                hist_loss.append(total_loss)
         self.csv_handler.save_data()
         hist_loss = np.array(hist_loss)
         np.save(self.args.save_path + 'hist_loss.npy', hist_loss)

@@ -53,7 +53,6 @@ class TrainerAE:
                 print('Training AE... Epoch: {}, Loss: {:.3f}'.format(
                     epoch, total_loss/len(self.train_loader)))
                 hist_loss.append(total_loss/len(self.train_loader))
-                
     
         self.csv_handler.save_data()
         hist_loss = np.array(hist_loss)

@@ -52,14 +52,18 @@ def compute_quantile(args, model, device):
 
     print('Compute quantile...')
     with torch.no_grad():
+        k = 0
         for x in Bar(data_loader):
             x = x.float().to(device)
-
             x_hat= model(x)
             loss = compute.forward_test(x, x_hat, args)
-            losses.append(loss.item())
+            losses.append(loss.detach().cpu().numpy())
+            k += 1
+            if k == 200:
+                break
         
-    losses = np.array(losses)
+    losses = np.concatenate(losses, axis=0)
+    print(losses.shape)
     return np.quantile(losses, args.alpha)
 
 def inference_sub(args, model, device, empi_quantile):

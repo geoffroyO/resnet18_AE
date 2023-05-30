@@ -78,7 +78,7 @@ def inference_sub(args, model, device, empi_quantile):
                 loss = compute.forward_test(x, x_hat, args)
                 losses.append(loss.detach().cpu())
         losses = torch.concatenate(losses, dim=0)
-        controls_test_ano.append((losses < empi_quantile).sum().item())
+        controls_test_ano.append((losses < empi_quantile).numpy().sum().item())
 
     patients_ano = []
     print('Inference on patients...') # Parallel GPU?

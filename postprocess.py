@@ -57,14 +57,9 @@ def compute_quantile(args, model, device):
             x = x.float().to(device)
             x_hat= model(x)
             loss = compute.forward_test(x, x_hat, args)
-            losses.append(loss.detach().cpu().numpy())
-            k += 1
-            if k == 200:
-                break
-        
-    losses = np.concatenate(losses, axis=0)
-    print(losses.shape)
-    return np.quantile(losses, args.alpha)
+            losses.append(loss.detach().cpu())
+    losses = torch.concatenate(losses, dim=0)
+    return torch.quantile(losses, args.alpha)
 
 def inference_sub(args, model, device, empi_quantile):
     compute = ComputeLoss()
@@ -81,10 +76,9 @@ def inference_sub(args, model, device, empi_quantile):
                 x = x.float().to(device)
                 x_hat= model(x)
                 loss = compute.forward_test(x, x_hat, args)
-                losses.append(loss.detach().cpu().numpy())
-        losses = np.concatenate(losses)
-        print(losses.shape)
-        controls_test_ano.append((losses < empi_quantile).sum())
+                losses.append(loss.detach().cpu())
+        losses = torch.concatenate(losses, dim=0)
+        controls_test_ano.append((losses < empi_quantile).sum().item())
 
     patients_ano = []
     print('Inference on patients...') # Parallel GPU?
@@ -97,9 +91,9 @@ def inference_sub(args, model, device, empi_quantile):
                 x = x.float().to(device)
                 x_hat= model(x)
                 loss = compute.forward_test(x, x_hat, args)
-                losses.append(loss.item())
-        losses = np.array(losses)
-        patients_ano.append((losses < empi_quantile).sum())
+                losses.append(loss.detach().cpu())
+        losses = torch.concatenate(losses, dim=0)
+        patients_ano.append((losses < empi_quantile).sum().item())
 
     return np.array(controls_test_ano), np.array(patients_ano)
 

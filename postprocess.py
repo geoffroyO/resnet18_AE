@@ -51,16 +51,14 @@ def compute_quantile(args, model, device):
     losses = []
 
     print('Compute quantile...')
-    k = 0
-    for x in Bar(data_loader):
-        x = x.float().to(device)
+    with torch.no_grad():
+        for x in Bar(data_loader):
+            x = x.float().to(device)
 
-        x_hat= model(x)
-        loss = compute.forward_test(x, x_hat, args)
-        losses.append(loss)
-        if k == 20:
-            break
-    
+            x_hat= model(x)
+            loss = compute.forward_test(x, x_hat, args)
+            losses.append(loss)
+        
     losses = torch.concat(losses).numpy()
     return np.quantile(losses, args.alpha)
 
@@ -74,11 +72,12 @@ def inference_sub(args, model, device, empi_quantile):
         control_test_data = DataTest(control_test_name, control_test_age, args.main_path + 'controls/', args)
         control_test_loader = DataLoader(control_test_data, batch_size=args.batch_size, shuffle=True, num_workers=2, pin_memory=True)
         losses = []
-        for x in control_test_loader:
-            x = x.float().to(device)
-            x_hat= model(x)
-            loss = compute.forward_test(x, x_hat, args)
-            losses.append(loss)
+        with torch.no_grad():
+            for x in control_test_loader:
+                x = x.float().to(device)
+                x_hat= model(x)
+                loss = compute.forward_test(x, x_hat, args)
+                losses.append(loss)
         losses = torch.concat(losses).detach().numpy()
         controls_test_ano.append((losses < empi_quantile).sum())
 
@@ -88,11 +87,12 @@ def inference_sub(args, model, device, empi_quantile):
         patients_data = DataTest(patients_name, patients_age, args.main_path + 'patients/', args)
         patients_loader = DataLoader(patients_data, batch_size=args.batch_size, shuffle=True, num_workers=2, pin_memory=True)
         losses = []
-        for x in patients_loader:
-            x = x.float().to(device)
-            x_hat= model(x)
-            loss = compute.forward_test(x, x_hat, args)
-            losses.append(loss)
+        with torch.no_grad():
+            for x in patients_loader:
+                x = x.float().to(device)
+                x_hat= model(x)
+                loss = compute.forward_test(x, x_hat, args)
+                losses.append(loss)
         losses = torch.concat(losses).detach().numpy()
         patients_ano.append((losses < empi_quantile).sum())
 
@@ -141,7 +141,7 @@ if __name__ == "__main__":
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
     model = AE(args_in.model).to(device)
-    model.load_state_dict(torch.load(args_in.save_path + 'best-model-parameters.pt', map_location=torch.device('cpu')))
+    model.load_state_dict(torch.load(args_in.save_path + 'best-model-parameters.pt'))
     model.eval()
 
     empi_quantile = compute_quantile(args, model, device)

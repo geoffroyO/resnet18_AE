@@ -81,8 +81,5 @@ def get_data(args, mode="Train"):
     controls_it = load_folds(args.fold, args.main_path, mode)
     main_path = args.main_path + "controls/"
     train = Data(controls_it, args, main_path)
-    if mode == 'Train':
-        dataloader_train = DataLoader(train, batch_size=args.batch_size, shuffle=True, num_workers=2, pin_memory=True)
-    if mode == 'Test' or mode == 'Train_test':
-        dataloader_train = DataLoader(train, batch_size=args.batch_size)#, shuffle=True, num_workers=2, pin_memory=True)
+    dataloader_train = DataLoader(train, batch_size=args.batch_size, shuffle=True, num_workers=2, pin_memory=True)
     return dataloader_train

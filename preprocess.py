@@ -9,14 +9,15 @@ from tqdm import tqdm
 
 
 def load_folds(fold, main_path, mode):
-    if mode == "Train":
-        folds_controls = pd.read_excel(main_path + 'controls.xlsx')
 
-        selection = folds_controls[folds_controls["fold_{}".format(fold)] == 1]
-        controls_names = selection['Subject'].to_numpy(dtype=str)
-        controls_ages = selection['Age'].to_numpy(dtype=str)
-        controls_it = [(name, age) for name, age in zip(controls_names, controls_ages)]
+    folds_controls = pd.read_excel(main_path + 'controls.xlsx')
 
+    selection = folds_controls[folds_controls["fold_{}".format(fold)] == 1]
+    controls_names = selection['Subject'].to_numpy(dtype=str)
+    controls_ages = selection['Age'].to_numpy(dtype=str)
+    controls_it = [(name, age) for name, age in zip(controls_names, controls_ages)]
+
+    if mode == 'Train_test' or mode == 'Train':
         return controls_it
 
     if mode == "Test":
@@ -32,6 +33,7 @@ def load_folds(fold, main_path, mode):
         patients_it = [(name, age) for name, age in zip(patients_names, patients_ages)]
 
         return controls_test_it, patients_it
+    
     
 
 class Data(Dataset):
@@ -76,9 +78,11 @@ class Data(Dataset):
         return patch
 
 def get_data(args, mode="Train"):
-    if mode == "Train":
-        controls_it = load_folds(args.fold, args.main_path, mode)
-        main_path = args.main_path + "controls/"
-        train = Data(controls_it, args, main_path)
+    controls_it = load_folds(args.fold, args.main_path, mode)
+    main_path = args.main_path + "controls/"
+    train = Data(controls_it, args, main_path)
+    if mode == 'Train':
         dataloader_train = DataLoader(train, batch_size=args.batch_size, shuffle=True, num_workers=2, pin_memory=True)
-        return dataloader_train
+    if mode == 'Test' or mode == 'Train_test':
+        dataloader_train = DataLoader(train, batch_size=args.batch_size)#, shuffle=True, num_workers=2, pin_memory=True)
+    return dataloader_train

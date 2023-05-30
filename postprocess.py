@@ -12,6 +12,8 @@ import numpy as np
 import argparse
 from barbar import Bar
 
+from tqdm import tqdm
+
 class DataTest(Dataset):
     def __init__(self, subject_name, subject_age, main_path, args):
         self.patch_size = args.patch_size
@@ -44,52 +46,77 @@ class DataTest(Dataset):
         return patch
 
 def compute_quantile(args, model, device):
-    data_loader = get_data(args)
-    compute = ComputeLoss(model, device)
+    data_loader = get_data(args, mode='Train_test')
+    compute = ComputeLoss()
     losses = []
 
     print('Compute quantile...')
+    k = 0
     for x in Bar(data_loader):
         x = x.float().to(device)
 
         x_hat= model(x)
-        loss = compute.forward_test(x, x_hat)
+        loss = compute.forward_test(x, x_hat, args)
         losses.append(loss)
+        if k == 20:
+            break
     
     losses = torch.concat(losses).numpy()
     return np.quantile(losses, args.alpha)
 
 def inference_sub(args, model, device, empi_quantile):
-    compute = ComputeLoss(model, device)
-    controls_test_it, patients_it = load_folds(args.fold, args.main_path, 'test')
+    compute = ComputeLoss()
+    controls_test_it, patients_it = load_folds(args.fold, args.main_path, 'Test')
     
     controls_test_ano = []
-    for control_test_name, control_test_age in controls_test_it:
+    print('Inference on controls test...')
+    for control_test_name, control_test_age in tqdm(controls_test_it):
         control_test_data = DataTest(control_test_name, control_test_age, args.main_path + 'controls/', args)
         control_test_loader = DataLoader(control_test_data, batch_size=args.batch_size, shuffle=True, num_workers=2, pin_memory=True)
         losses = []
         for x in control_test_loader:
             x = x.float().to(device)
             x_hat= model(x)
-            loss = compute.forward_test(x, x_hat)
+            loss = compute.forward_test(x, x_hat, args)
             losses.append(loss)
-        losses = torch.concat(losses).numpy()
+        losses = torch.concat(losses).detach().numpy()
         controls_test_ano.append((losses < empi_quantile).sum())
 
     patients_ano = []
-    for patients_name, patients_age in patients_it:
+    print('Inference on patients...') # Parallel GPU?
+    for patients_name, patients_age in tqdm(patients_it):
         patients_data = DataTest(patients_name, patients_age, args.main_path + 'patients/', args)
         patients_loader = DataLoader(patients_data, batch_size=args.batch_size, shuffle=True, num_workers=2, pin_memory=True)
         losses = []
         for x in patients_loader:
             x = x.float().to(device)
             x_hat= model(x)
-            loss = compute.forward_test(x, x_hat)
+            loss = compute.forward_test(x, x_hat, args)
             losses.append(loss)
-        losses = torch.concat(losses).numpy()
+        losses = torch.concat(losses).detatch().numpy()
         patients_ano.append((losses < empi_quantile).sum())
 
-    return controls_test_ano, patients_ano
+    return np.array(controls_test_ano), np.array(patients_ano)
+
+def gmean(controls_test_ano, patients_ano):
+    N_max = max(controls_test_ano + patients_ano)
+    g_mean = []
+
+    for k in range(N_max):
+        controls_test_ano_t = controls_test_ano >= k
+        patients_ano_t = patients_ano >= k
+
+        fp = controls_test_ano_t.sum()
+        tp = patients_ano_t.sum()
+        fn = (1 - patients_ano_t).sum()
+        tn = (1 - controls_test_ano_t).sum()
+
+        tpr = tp / (tp + fn)
+        fpr = fp / (tn + fp)
+
+        g_mean.append(np.sqrt(tpr * (1 - fpr)))
+
+    return max(g_mean)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -98,12 +125,10 @@ if __name__ == "__main__":
     parser.add_argument("-p", "--main_path", help="path of the data", type=str)
     parser.add_argument("-sp", "--save_path", help="path to save result", type=str)
     parser.add_argument("-m", "--model", help="model of AE", default='resnet18', type=str)
-    parser.add_argument("-e", "--epochs", help="epoches", default=5, type=int)
     parser.add_argument("-a", "--alpha", help="FPR", default=.02, type=float)
     args_in = parser.parse_args()
 
     class Args:
-        num_epochs=args_in.epochs
         batch_size=args_in.batch_size
         nb_channels=3
         main_path=args_in.main_path
@@ -116,8 +141,14 @@ if __name__ == "__main__":
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
     model = AE(args_in.model).to(device)
-    model.load_state_dict(torch.load(args_in.save_path + 'best-model-parameters.pt'))
+    model.load_state_dict(torch.load(args_in.save_path + 'best-model-parameters.pt', map_location=torch.device('cpu')))
     model.eval()
 
     empi_quantile = compute_quantile(args, model, device)
+    controls_test_ano, patients_ano = inference_sub(args, model, device, empi_quantile)
+
+    print('**********************')
+    print(gmean(controls_test_ano, patients_ano))
+    print('**********************')
+
 

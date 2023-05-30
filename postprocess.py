@@ -93,7 +93,7 @@ def inference_sub(args, model, device, empi_quantile):
             x_hat= model(x)
             loss = compute.forward_test(x, x_hat, args)
             losses.append(loss)
-        losses = torch.concat(losses).detatch().numpy()
+        losses = torch.concat(losses).detach().numpy()
         patients_ano.append((losses < empi_quantile).sum())
 
     return np.array(controls_test_ano), np.array(patients_ano)

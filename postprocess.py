@@ -77,8 +77,9 @@ def inference_sub(args, model, device, empi_quantile):
                 x = x.float().to(device)
                 x_hat= model(x)
                 loss = compute.forward_test(x, x_hat, args)
-                losses.append(loss.item())
-        losses = np.array(losses)
+                losses.append(loss.detach().cpu().numpy())
+        losses = np.concatenate(losses)
+        print(losses.shape)
         controls_test_ano.append((losses < empi_quantile).sum())
 
     patients_ano = []

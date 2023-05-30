@@ -14,6 +14,10 @@ from barbar import Bar
 
 from tqdm import tqdm
 
+from pyJoules.handler.csv_handler import CSVHandler
+from pyJoules.energy_meter import EnergyContext
+import tracemalloc
+
 class DataTest(Dataset):
     def __init__(self, subject_name, subject_age, main_path, args):
         self.patch_size = args.patch_size
@@ -49,7 +53,6 @@ def compute_quantile(args, model, device):
     data_loader = get_data(args, mode='Train_test')
     compute = ComputeLoss()
     losses = []
-
     print('Compute quantile...')
     with torch.no_grad():
         k = 0
@@ -58,8 +61,8 @@ def compute_quantile(args, model, device):
             x_hat= model(x)
             loss = compute.forward_test(x, x_hat, args)
             losses.append(loss.detach().cpu())
-    losses = torch.concatenate(losses, dim=0)
-    return torch.quantile(losses, args.alpha)
+    losses = np.concatenate(losses.numpy(), dim=0)
+    return np.quantile(losses, args.alpha)
 
 def inference_sub(args, model, device, empi_quantile):
     compute = ComputeLoss()
@@ -78,10 +81,10 @@ def inference_sub(args, model, device, empi_quantile):
                 loss = compute.forward_test(x, x_hat, args)
                 losses.append(loss.detach().cpu())
         losses = torch.concatenate(losses, dim=0)
-        controls_test_ano.append((losses < empi_quantile).numpy().sum().item())
-
+        controls_test_ano.append((losses < empi_quantile).sum().item())
+    
     patients_ano = []
-    print('Inference on patients...') # Parallel GPU?
+    print('Inference on patients...')
     for patients_name, patients_age in tqdm(patients_it):
         patients_data = DataTest(patients_name, patients_age, args.main_path + 'patients/', args)
         patients_loader = DataLoader(patients_data, batch_size=args.batch_size, shuffle=True, num_workers=2, pin_memory=True)
@@ -143,8 +146,17 @@ if __name__ == "__main__":
     model.load_state_dict(torch.load(args_in.save_path + 'best-model-parameters.pt'))
     model.eval()
 
-    empi_quantile = compute_quantile(args, model, device)
-    controls_test_ano, patients_ano = inference_sub(args, model, device, empi_quantile)
+    csv_handler = CSVHandler(args.save_path + 'result_inf.csv')
+    tracemalloc.start()
+    with EnergyContext(handler=csv_handler, start_tag='begin_inf') as ctx:
+        empi_quantile = compute_quantile(args, model, device)
+        controls_test_ano, patients_ano = inference_sub(args, model, device, empi_quantile)
+        ctx.record(tag=f'end_inf')
+    _, peak =  tracemalloc.get_traced_memory()
+    print('*********PEAK Inference*********')
+    print(peak)
+    print('******************')
+    csv_handler.save_data()
 
     print('**********************')
     print(gmean(controls_test_ano, patients_ano))

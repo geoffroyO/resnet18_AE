@@ -60,8 +60,8 @@ def compute_quantile(args, model, device):
             x = x.float().to(device)
             x_hat= model(x)
             loss = compute.forward_test(x, x_hat, args)
-            losses.append(loss.detach().cpu())
-    losses = np.concatenate(losses.numpy(), dim=0)
+            losses.append(loss.detach().cpu().numpy())
+    losses = np.concatenate(losses, dim=0)
     return np.quantile(losses, args.alpha)
 
 def inference_sub(args, model, device, empi_quantile):

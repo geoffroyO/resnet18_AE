@@ -33,7 +33,8 @@ class TrainerAE:
 
         with EnergyContext(handler=self.csv_handler, start_tag='e:1 b:0') as ctx:
             for epoch in range(1, self.args.num_epochs + 1):
-                tracemalloc.start()
+                if epoch == 1:
+                    tracemalloc.start()
                 total_loss = 0
                 nbatch = 1
                 for x in Bar(self.train_loader):
@@ -48,20 +49,21 @@ class TrainerAE:
                     if nbatch % 10000 == 0:
                         ctx.record(tag=f'e:{epoch} b:{nbatch}')
                     nbatch += 1
-                current, peak =  tracemalloc.get_traced_memory()
-                print('*********PEAK Controls*********')
-                print(peak)
-                print('******************')
-                break
+                if epoch == 1:
+                    _, peak =  tracemalloc.get_traced_memory()
+                    print('*********PEAK Controls*********')
+                    print(peak)
+                    print('******************')
+                    tracemalloc.stop()
                 if total_loss < min_loss:
                     min_loss = total_loss
                     torch.save(self.model.state_dict(), self.args.save_path + 'best-model-parameters.pt')
                     torch.save(optimizer.state_dict(), self.args.save_path + 'best-optim-parameters.pt')
                 print('Training AE... Epoch: {}, Loss: {:.3f}'.format(epoch, total_loss))
                 hist_loss.append(total_loss)
-        #self.csv_handler.save_data()
+        self.csv_handler.save_data()
         hist_loss = np.array(hist_loss)
-        #np.save(self.args.save_path + 'hist_loss.npy', hist_loss)
+        np.save(self.args.save_path + 'hist_loss.npy', hist_loss)
                 
 
         

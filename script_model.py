@@ -35,3 +35,4 @@ if __name__ == "__main__":
     print(args_in.model)
     trainer = TrainerAE(args, data_loader, device, args_in.model)
     trainer.train()
+    

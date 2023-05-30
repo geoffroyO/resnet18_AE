@@ -57,9 +57,9 @@ def compute_quantile(args, model, device):
 
             x_hat= model(x)
             loss = compute.forward_test(x, x_hat, args)
-            losses.append(loss)
+            losses.append(loss.item())
         
-    losses = torch.concat(losses).numpy()
+    losses = np.array(losses)
     return np.quantile(losses, args.alpha)
 
 def inference_sub(args, model, device, empi_quantile):
@@ -77,8 +77,8 @@ def inference_sub(args, model, device, empi_quantile):
                 x = x.float().to(device)
                 x_hat= model(x)
                 loss = compute.forward_test(x, x_hat, args)
-                losses.append(loss)
-        losses = torch.concat(losses).detach().numpy()
+                losses.append(loss.item())
+        losses = np.array(losses)
         controls_test_ano.append((losses < empi_quantile).sum())
 
     patients_ano = []
@@ -92,8 +92,8 @@ def inference_sub(args, model, device, empi_quantile):
                 x = x.float().to(device)
                 x_hat= model(x)
                 loss = compute.forward_test(x, x_hat, args)
-                losses.append(loss)
-        losses = torch.concat(losses).detach().numpy()
+                losses.append(loss.item())
+        losses = np.array(losses)
         patients_ano.append((losses < empi_quantile).sum())
 
     return np.array(controls_test_ano), np.array(patients_ano)
@@ -135,7 +135,7 @@ if __name__ == "__main__":
         save_path=args_in.save_path
         patch_size=args_in.patch_size
         alpha = args_in.alpha
-        fold=0
+        fold=3
 
     args = Args()
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')

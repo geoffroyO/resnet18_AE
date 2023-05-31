@@ -158,6 +158,11 @@ if __name__ == "__main__":
     print('******************')
     csv_handler.save_data()
 
+    np.save(args.save_path + 'controls_test_ano.npy', controls_test_ano)
+    np.save(args.save_path + 'patients_ano.npy', patients_ano)
+
+    controls_test_ano, patients_ano = list(controls_test_ano), list(patients_ano)
+    
     print('**********************')
     print(gmean(controls_test_ano, patients_ano))
     print('**********************')

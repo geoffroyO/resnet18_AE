@@ -55,7 +55,6 @@ class TrainerAE:
                     print(peak)
                     print('******************')
                     tracemalloc.stop()
-                    self.csv_handler.save_data()
                 if total_loss < min_loss:
                     min_loss = total_loss
                     torch.save(self.model.state_dict(), self.args.save_path + 'best-model-parameters.pt')

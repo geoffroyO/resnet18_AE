@@ -101,7 +101,7 @@ def inference_sub(args, model, device, empi_quantile):
     return np.array(controls_test_ano), np.array(patients_ano)
 
 def gmean(controls_test_ano, patients_ano):
-    N_max = max(controls_test_ano + patients_ano)
+    N_max = np.concatenate([controls_test_ano, patients_ano]).max()
     g_mean = []
 
     for k in range(N_max):
@@ -160,8 +160,6 @@ if __name__ == "__main__":
 
     np.save(args.save_path + 'controls_test_ano.npy', controls_test_ano)
     np.save(args.save_path + 'patients_ano.npy', patients_ano)
-
-    controls_test_ano, patients_ano = list(controls_test_ano), list(patients_ano)
     
     print('**********************')
     print(gmean(controls_test_ano, patients_ano))
